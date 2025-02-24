@@ -1,0 +1,282 @@
+:root {
+  --bg-dark: #1e1e2f;
+  --text-light: #d9d9e6;
+  --accent: #4a90e2;
+  --border: #3a3a5c;
+  --hover: #2a2a45;
+  --chart-bg: rgba(30, 30, 47, 0.95);
+  --scrollbar-bg: #2a2a45;
+  --scrollbar-thumb: #4a90e2;
+}
+
+body {
+  background: var(--bg-dark);
+  color: var(--text-light);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 20px;
+  background: rgba(30, 30, 47, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.header {
+  padding-top: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  flex-wrap: nowrap;
+}
+
+.app-logo {
+  width: 75px;
+  height: auto;
+  margin-right: 20px;
+}
+
+h1 {
+  color: var(--text-light);
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ticker-feed {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.ticker-feed span {
+  margin-right: 10px;
+}
+
+form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+input, textarea, select {
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  transition: border-color 0.3s ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(80%) sepia(20%) saturate(300%) hue-rotate(180deg) brightness(95%) contrast(90%);
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit {
+  color: var(--text-light);
+}
+
+input[type="date"]::-webkit-inner-spin-button,
+input[type="time"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+textarea {
+  grid-column: span 2;
+}
+
+button {
+  padding: 10px 15px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #3b7bd1;
+}
+
+.import-export {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.import-export-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.profit-loss {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  color: var(--text-light);
+  gap: 20px;
+}
+
+.profit-loss span {
+  margin-right: 10px;
+}
+
+.period-toggle {
+  display: flex;
+  gap: 5px;
+}
+
+.period-toggle button {
+  padding: 5px 10px;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.period-toggle button.active,
+.period-toggle button:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.trade-table {
+  max-height: 300px;
+  overflow-y: auto;
+  display: block;
+  margin-bottom: 30px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+
+.trade-table::-webkit-scrollbar {
+  width: 8px;
+}
+
+.trade-table::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+  border-radius: 5px;
+}
+
+.trade-table::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 5px;
+}
+
+.trade-table::-webkit-scrollbar-thumb:hover {
+  background: #3b7bd1;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  background: var(--hover);
+  color: var(--text-light);
+  font-weight: 600;
+  cursor: pointer;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+th:hover {
+  background: #35355a;
+}
+
+tr {
+  transition: background 0.2s ease;
+}
+
+tr:hover {
+  background: var(--hover);
+}
+
+td button {
+  margin-right: 8px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+td button:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.chart-container {
+  background: var(--chart-bg);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  margin-top: 20px;
+  height: 300px;
+}
+
+@media (max-width: 600px) {
+  .app-logo {
+    width: 50px;
+    margin-right: 10px;
+  }
+  h1 {
+    font-size: 24px;
+  }
+  .header {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+  }
+  .import-export {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .profit-loss {
+    margin-top: 10px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
