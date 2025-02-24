@@ -26,36 +26,50 @@ function App() {
 
   useEffect(() => {
     fetchTrades();
-
-    // Connect to backend SSE for tickers
+  
     const eventSource = new EventSource(`${BACKEND_URL}/api/tickers`);
+    let buffer = ''; // Buffer to accumulate chunks
+  
     eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'PRICE' && data.bids && data.bids.length > 0) {
-          const ticker = data.instrument.replace('_', '/');
-          const price = parseFloat(data.bids[0].price).toFixed(4);
-          setTickers(prev => ({ ...prev, [ticker]: price }));
+      buffer += event.data; // Append incoming data
+      const messages = buffer.split('\n\n'); // Split by SSE delimiter
+      buffer = messages.pop(); // Keep incomplete last part in buffer
+  
+      messages.forEach(message => {
+        if (message.startsWith('data: ')) {
+          const jsonData = message.replace('data: ', '');
+          try {
+            const data = JSON.parse(jsonData);
+            if (data.type === 'PRICE' && data.bids && data.bids.length > 0) {
+              const ticker = data.instrument.replace('_', '/');
+              const price = parseFloat(data.bids[0].price).toFixed(4);
+              setTickers(prev => ({ ...prev, [ticker]: price }));
+            }
+          } catch (err) {
+            console.error('SSE parse error:', err, 'Raw data:', jsonData);
+          }
         }
-      } catch (err) {
-        console.error('SSE parse error:', err);
-      }
+      });
     };
+  
     eventSource.onerror = (err) => {
       console.error('SSE error:', err);
       setError('Failed to fetch real-time prices');
     };
-
-    return () => eventSource.close(); // Cleanup SSE
+  
+    return () => eventSource.close();
   }, [sortBy, sortOrder]);
 
+
+
+  
   const fetchTrades = async () => {
     try {
       const res = await axios.get(`${BACKEND_URL}/api/trades?sortBy=${sortBy}&order=${sortOrder}`);
       setTrades(res.data || []);
       setError(null);
     } catch (err) {
-      console.error('Fetch trades error:', err);
+      console.error('Fetch trades error:', err.response ? err.response.data : err.message);
       setTrades([]);
       setError('Failed to load trades');
     }
