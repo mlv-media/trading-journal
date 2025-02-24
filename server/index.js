@@ -12,35 +12,38 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-// MongoDB connection setup with best practices
-const mongoURI = process.env.MONGO_URI || 'mongodb+srv://MLVDTJ:tGF_-c9RNU@F#7E@trading-journal-cluster.hoqnx.mongodb.net/trading-journal?retryWrites=true&w=majority&appName=trading-journal-cluster';
+// Suppress Mongoose strictQuery warning
+mongoose.set('strictQuery', true);
+
+// MongoDB connection setup
+const mongoURI = process.env.MONGO_URI;
+if (!mongoURI) {
+  console.error('MONGO_URI is not defined in environment variables');
+  process.exit(1);
+}
+console.log('Attempting to connect with MONGO_URI:', mongoURI.replace(/:([^@]+)@/, ':<hidden>@'));
 
 async function connectToMongoDB() {
   try {
     await mongoose.connect(mongoURI, {
-      // Connection timeouts and retries
-      serverSelectionTimeoutMS: 30000, // 30s to select server
-      connectTimeoutMS: 30000,        // 30s for initial connection
-      socketTimeoutMS: 45000,         // 45s for operations
-      // Stable API-like behavior
+      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      // Retry logic
       retryWrites: true,
       w: 'majority',
     });
     console.log('MongoDB connected successfully');
 
-    // Test connection (similar to ping)
     await mongoose.connection.db.admin().ping();
     console.log('Pinged MongoDB deployment - connection confirmed');
   } catch (err) {
     console.error('MongoDB connection error:', err.message, err.stack);
-    process.exit(1); // Exit if connection fails
+    process.exit(1);
   }
 }
 
-// Connect to MongoDB before starting server
 connectToMongoDB().then(() => {
   const tradeRoutes = require('./routes/trades');
   app.use('/api/trades', tradeRoutes);
