@@ -14,13 +14,16 @@ app.use(express.json());
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 30000, // 30 seconds
+  })
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 const tradeRoutes = require('./routes/trades');
 app.use('/api/trades', tradeRoutes);
 
+// OANDA API endpoint (unchanged)
 const OANDA_API_TOKEN = process.env.OANDA_API_TOKEN || '83d7f025343f6140a94a94abb4b0198f-363d0912ddc235a9b3450e578076f3ce';
 const OANDA_ACCOUNT_ID = process.env.OANDA_ACCOUNT_ID || '001-001-13416152-002';
 const OANDA_STREAM_URL = `https://stream-fxtrade.oanda.com/v3/accounts/${OANDA_ACCOUNT_ID}/pricing/stream?instruments=EUR_USD,GBP_USD,GBP_JPY,XAU_USD`;
@@ -56,6 +59,7 @@ app.get('/api/tickers', (req, res) => {
   });
 });
 
+// Root route (optional, overridden by catch-all)
 app.get('/', (req, res) => {
   res.send('Welcome to the Trading Journal Server!');
 });
