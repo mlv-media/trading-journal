@@ -20,58 +20,44 @@ function App() {
     'EUR/USD': 'N/A', 'GBP/USD': 'N/A', 'GBP/JPY': 'N/A', 'XAU/USD': 'N/A'
   });
   const [period, setPeriod] = useState('YTD');
-
+  const [error, setError] = useState(null); // Added for error feedback
+  const BACKEND_URL = 'https://trading-journal-server.onrender.com';
   const tickerOptions = ['EUR/USD', 'GBP/USD', 'GBP/JPY', 'XAU/USD'];
-  const OANDA_API_TOKEN = '83d7f025343f6140a94a94abb4b0198f-363d0912ddc235a9b3450e578076f3ce';
-  const OANDA_ACCOUNT_ID = '001-001-13416152-002'; // Replace with your live v20 Account ID
-  const OANDA_STREAM_URL = 'https://stream-fxtrade.oanda.com/v3/accounts';
 
   useEffect(() => {
     fetchTrades();
 
-    const streamPrices = async () => {
-      const instruments = 'EUR_USD,GBP_USD,GBP_JPY,XAU_USD';
-      const url = `${OANDA_STREAM_URL}/${OANDA_ACCOUNT_ID}/pricing/stream?instruments=${instruments}`;
-      const source = axios.CancelToken.source();
-
+    // Connect to backend SSE for tickers
+    const eventSource = new EventSource(`${BACKEND_URL}/api/tickers`);
+    eventSource.onmessage = (event) => {
       try {
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${OANDA_API_TOKEN}` },
-          responseType: 'stream',
-          cancelToken: source.token,
-        });
-
-        response.data.on('data', (chunk) => {
-          try {
-            const data = JSON.parse(chunk.toString());
-            if (data.type === 'PRICE' && data.bids && data.bids.length > 0) {
-              const ticker = data.instrument.replace('_', '/');
-              const price = parseFloat(data.bids[0].price).toFixed(4);
-              setTickers(prev => ({ ...prev, [ticker]: price }));
-            }
-          } catch (err) {
-            console.error('Stream data parse error:', err);
-          }
-        });
-
-        response.data.on('error', (err) => console.error('OANDA stream error:', err));
+        const data = JSON.parse(event.data);
+        if (data.type === 'PRICE' && data.bids && data.bids.length > 0) {
+          const ticker = data.instrument.replace('_', '/');
+          const price = parseFloat(data.bids[0].price).toFixed(4);
+          setTickers(prev => ({ ...prev, [ticker]: price }));
+        }
       } catch (err) {
-        if (!axios.isCancel(err)) console.error('OANDA stream setup error:', err);
+        console.error('SSE parse error:', err);
       }
-
-      return () => source.cancel('OANDA stream closed');
+    };
+    eventSource.onerror = (err) => {
+      console.error('SSE error:', err);
+      setError('Failed to fetch real-time prices');
     };
 
-    streamPrices();
+    return () => eventSource.close(); // Cleanup SSE
   }, [sortBy, sortOrder]);
 
   const fetchTrades = async () => {
     try {
-      const res = await axios.get(`http://localhost:5001/api/trades?sortBy=${sortBy}&order=${sortOrder}`);
+      const res = await axios.get(`${BACKEND_URL}/api/trades?sortBy=${sortBy}&order=${sortOrder}`);
       setTrades(res.data || []);
+      setError(null);
     } catch (err) {
       console.error('Fetch trades error:', err);
       setTrades([]);
+      setError('Failed to load trades');
     }
   };
 
@@ -119,15 +105,17 @@ function App() {
     };
     try {
       if (editingTrade) {
-        await axios.put(`http://localhost:5001/api/trades/${editingTrade._id}`, payload);
+        await axios.put(`${BACKEND_URL}/api/trades/${editingTrade._id}`, payload);
         setEditingTrade(null);
       } else {
-        await axios.post('http://localhost:5001/api/trades', payload);
+        await axios.post(`${BACKEND_URL}/api/trades`, payload);
       }
       setForm({ date: '', time: '', ticker: '', gainsLosses: '', riskAmount: '', comments: '' });
       fetchTrades();
+      setError(null);
     } catch (err) {
       console.error('Submit error:', err);
+      setError('Failed to save trade');
     }
   };
 
@@ -145,10 +133,12 @@ function App() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5001/api/trades/${id}`);
+      await axios.delete(`${BACKEND_URL}/api/trades/${id}`);
       fetchTrades();
+      setError(null);
     } catch (err) {
       console.error('Delete error:', err);
+      setError('Failed to delete trade');
     }
   };
 
@@ -175,7 +165,7 @@ function App() {
         try {
           const importedTrades = result.data;
           for (const trade of importedTrades) {
-            await axios.post('http://localhost:5001/api/trades', {
+            await axios.post(`${BACKEND_URL}/api/trades`, {
               date: new Date(trade.date),
               time: trade.time || '',
               ticker: trade.ticker || '',
@@ -185,8 +175,10 @@ function App() {
             });
           }
           fetchTrades();
+          setError(null);
         } catch (err) {
           console.error('Import error:', err);
+          setError('Failed to import trades');
         }
       },
     });
@@ -266,6 +258,7 @@ function App() {
         <span>GBP/JPY: {tickers['GBP/JPY']} | </span>
         <span>XAU/USD: {tickers['XAU/USD']}</span>
       </div>
+      {error && <div className="error">{error}</div>}
       <form onSubmit={handleSubmit}>
         <input type="date" name="date" value={form.date} onChange={handleChange} required />
         <input type="time" name="time" value={form.time} onChange={handleChange} required />
@@ -312,7 +305,7 @@ function App() {
           </thead>
           <tbody>
             {trades.map(trade => (
-              <tr key={trade._id || Math.random()}>
+              <tr key={trade._id}>
                 <td>{trade.date ? new Date(trade.date).toLocaleDateString() : 'N/A'}</td>
                 <td>{trade.time ? new Date(`1970-01-01T${trade.time}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A'}</td>
                 <td>{trade.ticker || 'N/A'}</td>
