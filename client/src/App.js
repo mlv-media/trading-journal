@@ -20,21 +20,21 @@ function App() {
     'EUR/USD': 'N/A', 'GBP/USD': 'N/A', 'GBP/JPY': 'N/A', 'XAU/USD': 'N/A'
   });
   const [period, setPeriod] = useState('YTD');
-  const [error, setError] = useState(null); // Added for error feedback
+  const [error, setError] = useState(null);
   const BACKEND_URL = 'https://trading-journal-server.onrender.com';
   const tickerOptions = ['EUR/USD', 'GBP/USD', 'GBP/JPY', 'XAU/USD'];
 
   useEffect(() => {
     fetchTrades();
-  
+
     const eventSource = new EventSource(`${BACKEND_URL}/api/tickers`);
-    let buffer = ''; // Buffer to accumulate chunks
-  
+    let buffer = '';
+
     eventSource.onmessage = (event) => {
-      buffer += event.data; // Append incoming data
-      const messages = buffer.split('\n\n'); // Split by SSE delimiter
-      buffer = messages.pop(); // Keep incomplete last part in buffer
-  
+      buffer += event.data;
+      const messages = buffer.split('\n\n');
+      buffer = messages.pop();
+
       messages.forEach(message => {
         if (message.startsWith('data: ')) {
           const jsonData = message.replace('data: ', '');
@@ -51,18 +51,15 @@ function App() {
         }
       });
     };
-  
+
     eventSource.onerror = (err) => {
       console.error('SSE error:', err);
       setError('Failed to fetch real-time prices');
     };
-  
+
     return () => eventSource.close();
   }, [sortBy, sortOrder]);
 
-
-
-  
   const fetchTrades = async () => {
     try {
       const res = await axios.get(`${BACKEND_URL}/api/trades?sortBy=${sortBy}&order=${sortOrder}`);
