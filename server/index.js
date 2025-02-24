@@ -54,4 +54,15 @@ app.get('/api/tickers', (req, res) => {
   });
 });
 
+// Define the root route
+app.get('/', (req, res) => {
+  res.send('Welcome to the Trading Journal Server!');
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000; // Render sets PORT automatically
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
